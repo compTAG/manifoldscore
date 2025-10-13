@@ -17,7 +17,7 @@ class ManifoldScore:
         - manifold_sample: instance of ManifoldSample containing the points and their distances.
         - a, b: range of radii to evaluate (from a to b).
         - step: step size for discretizing radii.
-        - device: 'cpu' or 'cuda' to indicate where tensors should reside.
+        - device: 'cpu', 'cuda', or 'mps' to indicate where tensors should reside.
         """
         self.device = device
         self.manifold_sample = manifold_sample

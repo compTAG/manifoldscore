@@ -12,7 +12,7 @@ class ManifoldSample:
         Parameters:
         - point_cloud: tensor of shape (N, D) representing N points in D-dimensional space.
         - distance_matrix: optional precomputed NxN distance matrix.
-        - device: 'cpu' or 'cuda', specifies where tensors will reside.
+        - device: 'cpu', 'cuda', or 'mps', specifies where tensors will reside.
         """
         # Ensure input is a torch tensor
         if not isinstance(point_cloud, torch.Tensor):
