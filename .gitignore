@@ -1,0 +1,81 @@
+# ===============================
+# Python / Packaging Project .gitignore
+# ===============================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+*.env
+*.venv
+
+# pyenv
+.python-version
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy / Pyright / Type checker
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Example data / outputs
+*.out
+*.tmp
+*.bak
+
+# Build artifacts
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Project-specific
+tests/__pycache__/
+examples/__pycache__/

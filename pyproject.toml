@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manifoldscore"
+version = "0.1.0"
+description = "A package for the intrinsic validation of manifold learning algorithms using PyTorch."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name="Eli Quist", email="eli.quist@student.montana.edu" }
+]
+requires-python = ">=3.8"
+dependencies = [
+  "torch>=1.9.0",
+  "numpy>=1.21.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/CompTaG/manifoldscore"
+Repository = "https://github.com/CompTaG/manifoldscore"
+
+[tool.setuptools.packages.find]
+where = ["."]
