@@ -18,8 +18,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/CompTaG/manifoldscore"
-Repository = "https://github.com/CompTaG/manifoldscore"
+Homepage = "https://github.com/compTAG/manifoldscore"
+Repository = "https://github.com/compTAG/manifoldscore"
 
 [tool.setuptools.packages.find]
 where = ["."]
