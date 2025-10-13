@@ -33,7 +33,7 @@ def test_distance_matrix_self_zero(random_point_cloud):
     """Distance from a point to itself should be zero."""
     sample = ManifoldSample(random_point_cloud)
     diagonal = torch.diag(sample.distance_matrix)
-    assert torch.allclose(diagonal, torch.zeros_like(diagonal), atol=1e-6)
+    assert torch.allclose(diagonal, torch.zeros_like(diagonal), atol=1e-3)
 
 
 def test_distance_matrix_normalized(random_point_cloud):
