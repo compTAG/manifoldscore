@@ -34,21 +34,9 @@ class ManifoldScore:
         self.aggregated_score = None      # Overall score
 
     def compute_scores(self, 
-                       theoretical_func: Callable[[float], float], 
-                       aggregated_correction: Callable[[float], float] = lambda r: 1, 
-                       disaggregated_correction: Callable[[float], float] = lambda r: 1):
-        """
-        Compute disaggregated (per-point) and aggregated (overall) scores.
-
-        Parameters:
-        - theoretical_func: function mapping radius to theoretical expected value.
-        - aggregated_correction: optional correction function applied for aggregated score.
-        - disaggregated_correction: optional correction function applied for per-point scores.
-
-        Returns:
-        - disaggregated_scores: tensor of shape (N,) with score per point.
-        - aggregated_score: scalar overall score.
-        """
+                   theoretical_func: Callable[[float], float], 
+                   aggregated_correction: Callable[[float], float] = lambda r: 1, 
+                   disaggregated_correction: Callable[[float], float] = lambda r: 1):
         # Ensure radius values are on CPU for numpy operations
         radius_array = self.radius_values if self.device == 'cpu' else self.radius_values.cpu()
         radius_array = radius_array.numpy()
@@ -58,9 +46,9 @@ class ManifoldScore:
         theoretical, agg_correction, disagg_correction = zip(*values)
 
         # Convert results back to tensors on the correct device
-        k_theoretical = torch.tensor(theoretical, device=self.device)                 # Expected value per radius
-        agg_correction = torch.tensor(agg_correction, device=self.device).view(1, -1) # Shape (1, R)
-        disagg_correction = torch.tensor(disagg_correction, device=self.device).view(1, -1) # Shape (1, R)
+        k_theoretical = torch.tensor(theoretical, device=self.device).view(1, -1)                 # Shape (1, R)
+        agg_correction = torch.tensor(agg_correction, device=self.device).view(1, -1)           # Shape (1, R)
+        disagg_correction = torch.tensor(disagg_correction, device=self.device).view(1, -1)     # Shape (1, R)
 
         # Load the pairwise distance matrix from the manifold sample
         distance_matrix = self.manifold_sample.distance_matrix.to(self.device)
@@ -72,26 +60,36 @@ class ManifoldScore:
 
         # Count neighbors within each radius (excluding self)
         # Resulting shape: (N, R)
-        within_radius = (distances_expanded <= radius_expanded).sum(dim=1) - 1  
+        within_radius = (distances_expanded <= radius_expanded).sum(dim=1)
 
         # Normalize counts by total number of points N
-        kf_vals = within_radius.float() / self.manifold_sample.N
-        self.kf_vals = kf_vals
+        kf_vals = within_radius.float() / float(self.manifold_sample.N)
+        self.kf_vals = kf_vals  # shape (N, R)
 
         # Compute disaggregated scores (per point)
-        # diff = deviation from theoretical expectation after applying disaggregated correction
-        diff = (disagg_correction * kf_vals) - k_theoretical  # shape (N, R)
+        diff = (disagg_correction * kf_vals) - k_theoretical  # shape (N, R) after broadcasting
         # L2 norm across radii for each point
-        norms = torch.norm(diff, dim=1)
-        # Convert norms to a similarity score between 0 and 1
-        self.disaggregated_scores = (1 - norms / self.manifold_sample.N)
+        norms = torch.norm(diff, dim=1)  # shape (N,)
+
+        # Normalization factor: max possible L2 error across the radii.
+        # Here we use the norm of a vector of ones (sqrt(R))
+        R = k_theoretical.numel()
+        normalization_factor = torch.sqrt(torch.tensor(float(R), device=self.device))
+        
+        # alternative normalization: ||k_theoretical||_2
+        # normalization_factor = k_theoretical.numel() * torch.norm(k_theoretical, p=2)
+
+        # Convert norms into similarity score in [0,1], clamp to [0,1]
+        disagg_scores = 1.0 - (norms / normalization_factor)
+        disagg_scores = torch.clamp(disagg_scores, 0.0, 1.0)
+        self.disaggregated_scores = disagg_scores
 
         # Compute aggregated score
-        # Mean neighborhood estimate across all points with aggregated correction
-        k_estimate_agg = agg_correction * kf_vals.mean(dim=0)  # shape (1, R)
-        # L2 norm deviation from theoretical expectation
-        agg_norm = torch.norm(k_estimate_agg - k_theoretical)
-        # Convert norm to similarity score between 0 and 1
-        self.aggregated_score = 1 - (agg_norm / self.manifold_sample.N).item()
+        k_estimate_agg = agg_correction * kf_vals.mean(dim=0, keepdim=True)  # shape (1, R)
+        agg_norm = torch.norm(k_estimate_agg - k_theoretical)  # scalar
+
+        agg_score = 1.0 - (agg_norm / normalization_factor).item()
+        agg_score = float(max(0.0, min(1.0, agg_score)))
+        self.aggregated_score = agg_score
 
         return self.disaggregated_scores, self.aggregated_score
