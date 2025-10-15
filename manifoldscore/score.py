@@ -58,12 +58,16 @@ class ManifoldScore:
         # Expand radius tensor for broadcasting: (1, 1, R)
         radius_expanded = self.radius_values.view(1, 1, -1)  
 
-        # Count neighbors within each radius (excluding self)
+        # Count neighbors within each radius
         # Resulting shape: (N, R)
         within_radius = (distances_expanded <= radius_expanded).sum(dim=1)
 
-        # Normalize counts by total number of points N
-        kf_vals = within_radius.float() / float(self.manifold_sample.N)
+        # Subtract 1 for self (distance zero), clamp to zero to avoid negatives
+        within_radius = (within_radius - 1).clamp(min=0)
+
+        # Normalize counts by total number of *other* points (N-1)
+        kf_vals = within_radius.float() / float(max(1, self.manifold_sample.N - 1))
+
         self.kf_vals = kf_vals  # shape (N, R)
 
         # Compute disaggregated scores (per point)
