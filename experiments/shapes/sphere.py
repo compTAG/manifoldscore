@@ -76,6 +76,28 @@ def generate_sphere_sample(n=1000, d=3, sample_type="uniform") -> ManifoldSample
             norms = np.linalg.norm(S, axis=1, keepdims=True)
             S /= norms
 
+    elif sample_type == "regular_jitter":
+        if d == 3:
+            # Start with Fibonacci sphere and add small random perturbations
+            indices = np.arange(0, n, dtype=float) + 0.5
+            phi = np.arccos(1 - 2 * indices / n)
+            theta = np.pi * (1 + 5 ** 0.5) * indices  # golden angle
+
+            x = np.cos(theta) * np.sin(phi)
+            y = np.sin(theta) * np.sin(phi)
+            z = np.cos(phi)
+            S = np.stack((x, y, z), axis=1)
+
+            # Add small Gaussian noise and re-normalize
+            S += 0.05 * np.random.normal(0, 1, S.shape)
+            norms = np.linalg.norm(S, axis=1, keepdims=True)
+            S /= norms
+        else:
+            print(f"[Warning] Regular_jitter sampling not implemented for d={d}. Using uniform sampling instead.")
+            S = np.random.normal(0, 1, (n, d))
+            norms = np.linalg.norm(S, axis=1, keepdims=True)
+            S /= norms
+
     elif sample_type == "point":
         # n copies of the north pole, perturbed slightly to avoid zero distances
         S = np.zeros((n, d))
