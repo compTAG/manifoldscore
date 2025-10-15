@@ -84,7 +84,7 @@ class ManifoldScore:
         # normalization_factor = k_theoretical.numel() * torch.norm(k_theoretical, p=2)
 
         # Convert norms into similarity score in [0,1], clamp to [0,1]
-        disagg_scores = 1.0 - (norms / normalization_factor)
+        disagg_scores = 1.0 - norms
         disagg_scores = torch.clamp(disagg_scores, 0.0, 1.0)
         self.disaggregated_scores = disagg_scores
 
