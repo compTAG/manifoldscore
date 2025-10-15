@@ -40,9 +40,9 @@ def plot_pt(data, scores, title="Pinched Torus with Manifold Scores"):
     fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(111, projection='3d')
 
-    ax.set_xlim(-5, 5)
-    ax.set_ylim(-5, 5)
-    ax.set_zlim(-2, 2)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
 
     # Colormap setup
     cmap = plt.cm.hot_r  # yellow → red → dark
@@ -66,19 +66,171 @@ def plot_pt(data, scores, title="Pinched Torus with Manifold Scores"):
         axis._axinfo["grid"]['color'] = (1, 1, 1, 0)
 
     # Maintain proportion
-    ax.set_box_aspect([2, 1, 1])
+    ax.set_box_aspect([1, 1, 1])
 
     # Add horizontal colorbar below
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0, aspect=40, fraction=0.05)
-    cbar.set_label('Local Manifold Score', fontsize=12)
-    cbar.ax.tick_params(labelsize=10)
+    # cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0, aspect=40, fraction=0.05)
+    # cbar.set_label('Local Manifold Score', fontsize=12)
+    # cbar.ax.tick_params(labelsize=10)
 
     # Tighter layout, no title
     plt.tight_layout()
     plt.show()
 
+def plot_pt_separate(data, scores,
+                    scatter_pdf="scatter_plot.pdf",
+                    colorbar_pdf="colorbar.pdf",
+                    title="Pinched Torus with Manifold Scores"):
+    """
+    Plots the 3D Pinched Torus and saves the scatter plot and colorbar separately as PDFs.
+    """
+    if data.shape[1] != 3:
+        raise ValueError("plot_pt() requires 3D data (shape (N, 3)).")
+    # --- Common colormap setup ---
+    cmap = plt.cm.hot_r
+    norm = plt.Normalize(vmin=scores.min(), vmax=scores.max())
+    colors = cmap(norm(scores))
+    # --- 1️⃣ Scatter plot (no colorbar) ---
+    fig = plt.figure(figsize=(12, 4))
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.set_xlim(-5, 5)
+    ax.set_ylim(-5, 5)
+    ax.set_zlim(-2, 2)
+    sc = ax.scatter(data[:, 0], data[:, 1], data[:, 2],
+                    c=colors, s=6, alpha=0.9, linewidth=0)
+    ax.view_init(elev=15, azim=180)
+    ax.dist = 10
+    ax.set_axis_off()
+    ax.grid(False)
+    ax.set_box_aspect([2, 1, 1])
+    # Transparent panes
+    for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+        axis.set_pane_color((1, 1, 1, 0))
+        axis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+    plt.tight_layout()
+    fig.savefig(scatter_pdf, bbox_inches="tight", dpi=300)
+    plt.close(fig)
+    # --- 2️⃣ Colorbar only ---
+    fig_cb, ax_cb = plt.subplots(figsize=(4, 0.4))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig_cb.colorbar(sm, cax=ax_cb, orientation='horizontal')
+    cbar.set_label('Local Manifold Score', fontsize=10)
+    cbar.ax.tick_params(labelsize=8)
+    fig_cb.savefig(colorbar_pdf, bbox_inches="tight", dpi=300)
+    plt.close(fig_cb)
+    print(f"✅ Saved scatter plot to {scatter_pdf}")
+    print(f"✅ Saved colorbar to {colorbar_pdf}")
+
+def plot_wedged_spheres(data, scores, title="Wedged Spheres with Manifold Scores"):
+    """
+    Plots the 3D Wedged Spheres point cloud, colored by manifold scores,
+    with formatting similar to the provided example (flattened 3D view, horizontal colorbar).
+    """
+    if data.shape[1] != 3:
+        raise ValueError("plot_pt() requires 3D data (shape (N, 3)).")
+
+    # Figure setup
+    fig = plt.figure(figsize=(10, 5))
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.set_xlim(-1.75, 1.75)
+    ax.set_ylim(-1.75, 1.75)
+    ax.set_zlim(-1.75, 1.75)
+
+    # Colormap setup
+    cmap = plt.cm.hot_r  # yellow → red → dark
+    norm = plt.Normalize(vmin=scores.min(), vmax=scores.max())
+    colors = cmap(norm(scores))
+
+    # Scatter plot (thin marker style)
+    ax.scatter(data[:, 0], data[:, 1], data[:, 2], c=colors, s=6, alpha=0.9, linewidth=0)
+
+    # Set viewpoint and flatten perspective
+    ax.view_init(elev=0, azim=90)
+    ax.dist = 20  # zoom control
+
+    # Remove all axis elements for clean look
+    ax.set_axis_off()
+    ax.grid(False)
+
+    # Transparent panes
+    for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+        axis.set_pane_color((1, 1, 1, 0))
+        axis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+
+    # Maintain proportion
+    ax.set_box_aspect([.5, .5, .5])
+
+    # Add horizontal colorbar below
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    # cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0, aspect=40, fraction=0.02)
+    # cbar.set_label('Local Manifold Score', fontsize=12)
+    # cbar.ax.tick_params(labelsize=10)
+
+    # Tighter layout, no title
+    # plt.tight_layout()
+    plt.show()
+
+def plot_wedged_spheres_separate(data, scores,
+                                 scatter_pdf="scatter_plot.pdf",
+                                 colorbar_pdf="colorbar.pdf",
+                                 title="Wedged Spheres with Manifold Scores"):
+    """
+    Plots the 3D Wedged Spheres and saves the scatter plot and colorbar separately as PDFs.
+    """
+    if data.shape[1] != 3:
+        raise ValueError("plot_pt() requires 3D data (shape (N, 3)).")
+
+    # --- Common colormap setup ---
+    cmap = plt.cm.hot_r
+    norm = plt.Normalize(vmin=scores.min(), vmax=scores.max())
+    colors = cmap(norm(scores))
+
+    # --- 1️⃣ Scatter plot (no colorbar) ---
+    fig = plt.figure(figsize=(12, 4))
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.set_zlim(-1, 1)
+
+    sc = ax.scatter(data[:, 0], data[:, 1], data[:, 2],
+                    c=colors, s=6, alpha=0.9, linewidth=0)
+
+    ax.view_init(elev=0, azim=90)
+    ax.dist = 8
+    ax.set_axis_off()
+    ax.grid(False)
+    ax.set_box_aspect([.5, .5, .5])
+
+    # Transparent panes
+    for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+        axis.set_pane_color((1, 1, 1, 0))
+        axis._axinfo["grid"]['color'] = (1, 1, 1, 0)
+
+    plt.tight_layout()
+    fig.savefig(scatter_pdf, bbox_inches="tight", dpi=300)
+    plt.close(fig)
+
+    # --- 2️⃣ Colorbar only ---
+    fig_cb, ax_cb = plt.subplots(figsize=(4, 0.4))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+
+    cbar = fig_cb.colorbar(sm, cax=ax_cb, orientation='horizontal')
+    cbar.set_label('Local Manifold Score', fontsize=10)
+    cbar.ax.tick_params(labelsize=8)
+
+    fig_cb.savefig(colorbar_pdf, bbox_inches="tight", dpi=300)
+    plt.close(fig_cb)
+
+    print(f"✅ Saved scatter plot to {scatter_pdf}")
+    print(f"✅ Saved colorbar to {colorbar_pdf}")
 
 
 # ------------------------------------------------------------
@@ -136,6 +288,9 @@ def exp_pinched_torus(num_points, visualize=True):
     if visualize and disagg_scores is not None:
         plot_pt(torus_sample.point_cloud.numpy(), disagg_scores, 
                 title=f"Pinched Torus Sample (N={num_points}) - Agg Score: {agg_score:.4f}")
+        # plot_pt_separate(torus_sample.point_cloud.numpy(), disagg_scores, 
+                # scatter_pdf="pinched_torus_scatter.pdf",
+                # colorbar_pdf="pinched_torus_colorbar.pdf")
 
     return disagg_scores, agg_score
 
@@ -188,14 +343,17 @@ def exp_wedged_spheres(num_points, visualize=True):
 
     # 3. Visualization
     if visualize and disagg_scores is not None:
-        plot_pt(wedged_spheres_sample.point_cloud.numpy(), disagg_scores, 
+        plot_wedged_spheres(wedged_spheres_sample.point_cloud.numpy(), disagg_scores, 
                 title=f"Wedged Spheres Sample (N={num_points}) - Agg Score: {agg_score:.4f}")
+        # plot_wedged_spheres_separate(wedged_spheres_sample.point_cloud.numpy(), disagg_scores, 
+        #         scatter_pdf="wedged_spheres_scatter.pdf",
+        #         colorbar_pdf="wedged_spheres_colorbar.pdf")
 
     return disagg_scores, agg_score 
 
 def run_pinched_torus():
     # Set the number of points (as in the original context)
-    num_points = 2000
+    num_points = 3000
     
     # Run the single experiment
     disagg_scores, agg_score = exp_pinched_torus(
@@ -215,7 +373,7 @@ def run_pinched_torus():
 
 def run_wedged_spheres():
     # Set the number of points (as in the original context)
-    num_points = 2000
+    num_points = 3000
     
     # Run the single experiment
     disagg_scores, agg_score = exp_wedged_spheres(
@@ -234,5 +392,5 @@ def run_wedged_spheres():
     plt.show()
 
 if __name__ == "__main__":
-    # run_pinched_torus()
-    run_wedged_spheres()
+    run_pinched_torus()
+    # run_wedged_spheres()
