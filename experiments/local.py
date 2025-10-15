@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 
 # Assuming these utilities are available in the project structure
 from utils import compute_manifold_score 
-from shapes.pinched_torus import generate_pinched_torus_sample 
+from shapes.pinched_torus import generate_pinched_torus_sample
+from shapes.wedged_spheres import generate_wedged_spheres_sample
 
 # NOTE: The original pinched_torus context used KFunction, ManifoldValidator, and Isomap.
 # This experiment file uses the generic 'compute_manifold_score' function, 
@@ -138,7 +139,61 @@ def exp_pinched_torus(num_points, visualize=True):
 
     return disagg_scores, agg_score
 
-def main():
+def exp_wedged_spheres(num_points, visualize=True):
+    """
+    Runs the Manifold Score experiment on the Wedged Spheres dataset.
+    
+    Parameters
+    ----------
+    num_points : int
+        Number of points to subsample from the dataset.
+    visualize : bool
+        If True, plots the result colored by disaggregated scores.
+
+    Returns
+    -------
+    tuple
+        (disaggregated_scores: np.ndarray, aggregated_score: float)
+    """
+    print(f"Loading and subsampling {num_points} points for Pinched Torus...")
+    
+    # 1. Load the data using the utility function
+    # The utility handles loading and subsampling 'num_points'
+    wedged_spheres_sample = generate_wedged_spheres_sample(n=num_points)
+    
+    # The pinched torus is a 2D manifold embedded in R^3.
+    # The theoretical K-function for a 2D manifold is K(r) = πr^2.
+    theoretical_func = lambda r: np.pi * (r**2)  
+    
+    EC = 2  # Euler characteristic for sphere
+    curvature_correction_func = lambda r: (1.0 - (np.pi * EC / 24)) ** -1
+    
+    # Parameters a and b for the integration range are taken from the context
+    a = 0.0
+    b = 0.25
+    
+    # 2. Compute Manifold Scores
+    disagg_scores, agg_score = compute_manifold_score(
+        wedged_spheres_sample,
+        theoretical_func,
+        disagg_correction=curvature_correction_func,
+        agg_correction=curvature_correction_func,
+        a=a,
+        b=b,
+        step=0.01,
+        device='cpu',
+        # NOTE: Setting visualize=False here prevents intermediate plots from compute_manifold_score
+        visualize=False 
+    )
+
+    # 3. Visualization
+    if visualize and disagg_scores is not None:
+        plot_pt(wedged_spheres_sample.point_cloud.numpy(), disagg_scores, 
+                title=f"Wedged Spheres Sample (N={num_points}) - Agg Score: {agg_score:.4f}")
+
+    return disagg_scores, agg_score 
+
+def run_pinched_torus():
     # Set the number of points (as in the original context)
     num_points = 2000
     
@@ -158,5 +213,26 @@ def main():
     # Keep the plot window open
     plt.show()
 
+def run_wedged_spheres():
+    # Set the number of points (as in the original context)
+    num_points = 2000
+    
+    # Run the single experiment
+    disagg_scores, agg_score = exp_wedged_spheres(
+        num_points=num_points, 
+        visualize=True
+    )
+    
+    print("-" * 50)
+    print(f"Experiment Complete: Wedged Spheres (N={num_points})")
+    print(f"Aggregated Manifold Score: {agg_score:.6f}")
+    if disagg_scores is not None:
+        print(f"Max Disaggregated Score: {disagg_scores.max():.6f}")
+        print(f"Min Disaggregated Score: {disagg_scores.min():.6f}")
+
+    # Keep the plot window open
+    plt.show()
+
 if __name__ == "__main__":
-    main()
+    # run_pinched_torus()
+    run_wedged_spheres()
