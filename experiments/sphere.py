@@ -1,5 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+
+from sklearn.manifold import Isomap
+from scipy.special import gamma
 
 from utils import compute_manifold_score
 
@@ -85,10 +89,56 @@ def run_exp_2_sphere():
     for res in results:
         print(f"{res['Num Points']:>10} | {res['Sample Type']:>12} | {res['Curvature']:>15} | {res['Mean Score']:>15.6f} | {res['Std Dev']:>10.6f}")
 
+def exp_n_sphere(num_points, d, sample_type, curvature_correction_func, a=0.0, b=0.3, visualize=False):
+    sphere = generate_sphere_sample(n=num_points, d=d, sample_type=sample_type)
+
+    # replace sphere distance matrix with one from the neighborhood graph (using Isomap from sklearn)
+    isomap = Isomap(n_neighbors=10, n_components=d, metric='euclidean')
+    isomap.fit(sphere.point_cloud.numpy())
+    sphere.distance_matrix = torch.tensor(isomap.dist_matrix_ / isomap.dist_matrix_.max(), dtype=torch.float32)
+
+    theoretical_func = lambda r: (np.pi ** (d / 2)) * (r**d) / gamma(d / 2 + 1)  # K(r) for unit sphere in R^d
+
+    disagg_scores, agg_score = compute_manifold_score(
+        sphere,
+        theoretical_func,
+        disagg_correction=curvature_correction_func,
+        agg_correction=curvature_correction_func,
+        a=a,
+        b=b,
+        step=0.01,
+        device='cpu',
+        visualize=visualize
+    )
+
+    return agg_score
+
+def run_test_n_sphere():
+    num_points = 1000
+    sample_type = "uniform"
+    d = 101  # Dimension of R^d, so sphere is S^(d-1)
+
+    visualize = True
+
+    a = 0.0
+    b = 0.3
+
+    LE = d - 1  # Euler characteristic for sphere
+    curvature_correction_func = lambda r: (1.0 - (((r**2) * LE * (d - 2)) / (12 * (d - 1) * (d + 1)))) ** -1
+    print(curvature_correction_func(0.5))
+
+    agg_score_corrected = exp_n_sphere(num_points, d, sample_type, curvature_correction_func, visualize=visualize, a=a, b=b)
+    agg_score_no_correction = exp_n_sphere(num_points, d, sample_type, lambda r: 1.0, visualize=visualize, a=a, b=b)
+
+    print(f"Aggregated Manifold Score for {num_points} points ({sample_type} in R^{d} (with correction)): {agg_score_corrected:.8f}")
+    print(f"Aggregated Manifold Score for {num_points} points ({sample_type} in R^{d} (no correction)): {agg_score_no_correction:.8f}")
 
 def main():
-    run_exp_2_sphere()
+    # run_exp_2_sphere()
     # run_test_2_sphere()
+
+    run_test_n_sphere()
+
     plt.show()
 
 if __name__ == "__main__":
